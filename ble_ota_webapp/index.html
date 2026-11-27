@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zendure Hyper 2000 — Download, Patch &amp; BLE OTA Flasher</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #1f2630;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #3fb950;
+      --accent-hover: #2ea043;
+      --blue: #58a6ff;
+      --purple: #bc8cff;
+      --warn: #d29922;
+      --danger: #f85149;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px 16px 48px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.32rem;
+      font-weight: 600;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+    }
+    .badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .badge.connected { border-color: rgba(63,185,80,0.45); color: var(--accent); }
+    .badge.connected .dot { background: var(--accent); }
+    .badge.busy { border-color: rgba(88,166,255,0.45); color: var(--blue); }
+    .badge.busy .dot { background: var(--blue); }
+    .badge.patched { border-color: rgba(188,140,255,0.5); color: var(--purple); }
+    .badge.patched .dot { background: var(--purple); }
+    .badge.error { border-color: rgba(248,81,73,0.45); color: var(--danger); }
+    .badge.error .dot { background: var(--danger); }
+
+    .banner {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.86rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .banner.warn {
+      border-color: rgba(210,153,34,0.45);
+      background: rgba(210,153,34,0.1);
+      color: #f0c674;
+    }
+    .banner.danger {
+      border-color: rgba(248,81,73,0.45);
+      background: rgba(248,81,73,0.12);
+      color: #ff9492;
+    }
+    .banner.info {
+      border-color: rgba(88,166,255,0.35);
+      background: rgba(88,166,255,0.08);
+      color: #a5d6ff;
+    }
+    code {
+      font-family: var(--mono);
+      background: rgba(255,255,255,0.08);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .card-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 7px;
+      font-size: 0.87rem;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    button.sm { padding: 5px 10px; font-size: 0.8rem; }
+    button:hover:not(:disabled) { background: #29323e; border-color: #48505a; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.primary { background: var(--accent-hover); border-color: var(--accent); color: #fff; }
+    button.primary:hover:not(:disabled) { background: var(--accent); }
+    button.blue { background: #1f6feb; border-color: var(--blue); color: #fff; }
+    button.blue:hover:not(:disabled) { background: #388bfd; }
+    button.purple { background: #6e40c9; border-color: var(--purple); color: #fff; }
+    button.purple:hover:not(:disabled) { background: #8957e5; }
+    button.danger { background: #b62324; border-color: var(--danger); color: #fff; }
+    button.danger:hover:not(:disabled) { background: var(--danger); }
+
+    label.field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    input[type="text"], input[type="email"], input[type="password"], input[type="number"], select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 0.88rem;
+      font-family: var(--mono);
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    label.check {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.84rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 6px 12px;
+    }
+    .tab-btn.active {
+      background: var(--surface-2);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .dropzone {
+      display: block;
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      background: rgba(255,255,255,0.015);
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--blue);
+      background: rgba(88,166,255,0.06);
+    }
+    .dropzone input { display: none; }
+    .dropzone .title { font-weight: 600; font-size: 0.93rem; }
+    .dropzone .sub { color: var(--muted); font-size: 0.81rem; margin-top: 4px; }
+
+    .patch-box {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(110, 64, 201, 0.08);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .patch-box.patched {
+      border-color: rgba(63,185,80,0.45);
+      background: rgba(63,185,80,0.08);
+    }
+
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 8px 12px;
+      margin-top: 12px;
+      font-size: 0.83rem;
+    }
+    .kv {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+    .kv .k { color: var(--muted); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .kv .v { font-family: var(--mono); font-size: 0.86rem; margin-top: 2px; word-break: break-all; }
+    .kv .v.ok { color: var(--accent); }
+    .kv .v.warn { color: var(--warn); }
+    .kv .v.bad { color: var(--danger); }
+
+    table.tbl {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.83rem;
+      font-family: var(--mono);
+    }
+    table.tbl th, table.tbl td {
+      text-align: left;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    table.tbl th { color: var(--muted); font-family: var(--sans); font-weight: 600; font-size: 0.78rem; }
+
+    .progress-wrap {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      height: 18px;
+      overflow: hidden;
+      margin: 10px 0 8px;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #2ea043, #3fb950);
+      transition: width 0.18s ease;
+    }
+    .progress-bar.error { background: var(--danger); }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px 16px;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    details {
+      margin-top: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+    summary {
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--muted);
+      user-select: none;
+    }
+
+    #log {
+      background: #090d12;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      height: 250px;
+      overflow-y: auto;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .log-tx { color: #79c0ff; }
+    .log-rx { color: #7ee787; }
+    .log-warn { color: #e3b341; }
+    .log-err { color: #ff7b72; }
+    .log-info { color: #c9d1d9; }
+
+    .hint { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Zendure Hyper 2000 — Download, Patch &amp; BLE OTA Flasher</h1>
+      <div id="statusBadge" class="badge"><span class="dot"></span><span id="statusText">Disconnected</span></div>
+    </header>
+
+    <div id="btUnsupported" class="banner danger hidden">
+      <strong>Web Bluetooth is not available in this browser/context.</strong>
+      Use Chrome, Edge, or Chromium over <code>http://localhost:8080</code> (via <code>python3 ble_ota_webapp/server.py</code>).
+      If accessing from another device on your LAN, Chrome requires HTTPS: run
+      <code>python3 ble_ota_webapp/server.py --host 0.0.0.0 --https-port 8443</code> and open <code>https://&lt;server-ip&gt;:8443</code>.
+    </div>
+
+    <div class="banner warn">
+      <strong>Unofficial Community Tool — Use at Your Own Risk:</strong> Not affiliated with or endorsed by Zendure. Flashing modified firmware may void your warranty.
+      This tool is strictly locked to <strong><code>MASTER_v2.1.47</code></strong> (STM32 comms MCU only — never touches AC/DSP inverter or BMS safety firmware).
+      All patching runs locally in your browser; credentials stay in local RAM only. Keep the Hyper 2000 powered (SoC &gt; 20%) and stay near the unit during flashing.
+    </div>
+
+    <!-- 1. Get Firmware & Built-In Patcher -->
+    <section class="card">
+      <div class="card-header">
+        <h2>1. Firmware — Download or Load &amp; Patch</h2>
+        <span id="fwStateBadge" class="badge">No firmware loaded</span>
+      </div>
+
+      <div class="tabs">
+        <button id="tabCloud" class="tab-btn active">Download from Zendure Cloud</button>
+        <button id="tabLocal" class="tab-btn">Load Local .bin File</button>
+      </div>
+
+      <!-- Panel A: Cloud Downloader -->
+      <div id="panelCloud">
+        <div id="serverOfflineHint" class="banner info hidden" style="margin-bottom:10px">
+          Cloud download needs the local Python helper (to avoid browser CORS &amp; handle RSA-PKCS1v1.5 login). Start it with:
+          <code>python3 ble_ota_webapp/server.py</code> — or switch to <strong>Load Local .bin File</strong> (the built-in JS patcher &amp; BLE flasher work standalone!).
+        </div>
+
+        <div class="grid-3">
+          <label class="field">
+            Zendure Account (Email)
+            <input type="email" id="inpEmail" placeholder="you@example.com" autocomplete="username" />
+          </label>
+          <label class="field">
+            Password
+            <input type="password" id="inpPassword" placeholder="••••••••" autocomplete="current-password" />
+          </label>
+          <label class="field">
+            API Base URL
+            <input type="text" id="inpBaseUrl" value="https://app.zendure.tech/v2/" />
+          </label>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button id="btnCloudLogin" class="blue">Login &amp; List Devices</button>
+          <span id="cloudStatus" class="hint"></span>
+        </div>
+
+        <div id="cloudDevicesWrap" class="hidden" style="margin-top:12px">
+          <div class="row">
+            <label class="field" style="flex:1;min-width:260px">
+              Select Device
+              <select id="selCloudDevice"></select>
+            </label>
+            <button id="btnFetchFw" class="blue" style="align-self:flex-end">Fetch Firmware List</button>
+          </div>
+
+          <table id="cloudFwTable" class="tbl hidden">
+            <thead>
+              <tr><th>Module</th><th>Version</th><th>MD5</th><th>Action</th></tr>
+            </thead>
+            <tbody id="cloudFwBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Panel B: Local File Picker -->
+      <div id="panelLocal" class="hidden">
+        <label class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept=".bin,application/octet-stream" />
+          <div class="title" id="dropTitle">Click to select or drop a firmware .bin file</div>
+          <div class="sub" id="dropSub">Drop stock MASTER_v2.1.47.bin (to patch here) or an already-patched .bin</div>
+        </label>
+      </div>
+
+      <!-- Built-in Patcher Box -->
+      <div id="patchBox" class="patch-box hidden">
+        <div>
+          <strong id="patchTitle">MQTT Fix v2 Patcher</strong>
+          <div id="patchDesc" class="hint"></div>
+        </div>
+        <div class="row">
+          <button id="btnApplyPatch" class="purple hidden">Apply MQTT Fix v2 Patch</button>
+          <button id="btnRevertStock" class="hidden">Use Stock .bin (Dry-Run / Rollback)</button>
+          <button id="btnSaveBin">Save .bin to Disk</button>
+        </div>
+      </div>
+
+      <div id="fileInfo" class="kv-grid hidden">
+        <div class="kv"><div class="k">Active Image</div><div class="v" id="fiName">—</div></div>
+        <div class="kv"><div class="k">Size</div><div class="v" id="fiSize">—</div></div>
+        <div class="kv"><div class="k">Zendure CRC-16</div><div class="v" id="fiCrc16">—</div></div>
+        <div class="kv"><div class="k">CRC-32 (IEEE)</div><div class="v" id="fiCrc32">—</div></div>
+        <div class="kv"><div class="k">Image Sanity</div><div class="v" id="fiSanity">—</div></div>
+      </div>
+
+      <div class="grid-3" style="margin-top:12px">
+        <label class="field">
+          Target Module (<code>firmware.type</code>)
+          <select id="selModule" disabled>
+            <option value="MASTER" selected>MASTER (STM32 Main MCU — locked)</option>
+          </select>
+        </label>
+
+        <label class="field">
+          Target Version Integer (<code>firmware.version</code>)
+          <input type="number" id="inpVersion" value="8496" min="1" max="65535" />
+          <span class="hint" id="verPreview">0x2130 → v2.1.48</span>
+        </label>
+
+        <label class="field">
+          Device ID (auto-filled on connect/login)
+          <input type="text" id="inpDeviceId" placeholder="auto or 8-char key" maxlength="32" />
+        </label>
+      </div>
+    </section>
+
+    <!-- 2. BLE Connection -->
+    <section class="card">
+      <div class="card-header">
+        <h2>2. Bluetooth Connection</h2>
+        <span class="hint" style="font-family:var(--mono)">SVC 0xA002 · RX 0xC304 · TX 0xC305</span>
+      </div>
+      <div class="row">
+        <button id="btnConnect" class="blue">Connect Hyper 2000</button>
+        <button id="btnDisconnect" disabled>Disconnect</button>
+        <button id="btnQueryVer" disabled>Query Versions</button>
+        <button id="btnSendSppOk" disabled>Send BLESPP_OK</button>
+        <label class="check" style="margin-left:auto">
+          <input type="checkbox" id="chkAllDevices" />
+          Show all BLE devices
+        </label>
+      </div>
+
+      <div id="deviceInfo" class="kv-grid hidden">
+        <div class="kv"><div class="k">BLE Name</div><div class="v" id="devBleName">—</div></div>
+        <div class="kv"><div class="k">Device ID</div><div class="v" id="devId">—</div></div>
+        <div class="kv"><div class="k">Serial (SN)</div><div class="v" id="devSn">—</div></div>
+        <div class="kv"><div class="k">MASTER / AC FW</div><div class="v" id="devFwBrief">—</div></div>
+        <div class="kv"><div class="k">Handshake</div><div class="v" id="devSpp">Waiting…</div></div>
+      </div>
+
+      <table id="modulesTable" class="tbl hidden">
+        <thead>
+          <tr><th>Module</th><th>Version (Dec)</th><th>Version (Hex)</th><th>Decoded</th></tr>
+        </thead>
+        <tbody id="modulesBody"></tbody>
+      </table>
+    </section>
+
+    <!-- 3. Flash Control & Progress -->
+    <section class="card">
+      <div class="card-header">
+        <h2>3. Flash Firmware over Bluetooth</h2>
+        <span class="hint" id="otaPhase">Idle</span>
+      </div>
+
+      <div class="row" style="margin-bottom:10px">
+        <label class="check">
+          <input type="checkbox" id="chkAcceptRisk" />
+          I understand this is unofficial <code>MASTER_v2.1.47</code> firmware and flash at my own risk (stock rollback is always supported via BLE)
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="btnStartOta" class="primary" disabled>Start BLE OTA Upload</button>
+        <button id="btnAbortOta" class="danger" disabled>Abort</button>
+        <button id="btnTestReq" disabled title="Send standalone otareq (WARNING: erases SPI staging flash on accept!)">Send otareq</button>
+      </div>
+
+      <div class="progress-wrap">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+      <div class="stats">
+        <span id="statBytes">0 / 0 B (0.0%)</span>
+        <span id="statSpeed">Speed: —</span>
+        <span id="statEta">ETA: —</span>
+        <span id="statSeq">Group: — · Retries: 0</span>
+      </div>
+
+      <details>
+        <summary>Advanced BLE Transfer Settings (pacing, MTU chunk size, write mode)</summary>
+        <div class="grid-2" style="margin-top:10px">
+          <label class="field">
+            Inter-packet delay (ms)
+            <input type="number" id="inpDelayMs" value="70" min="5" max="500" />
+            <span class="hint">Zendure Android app default is 70 ms so STM32 UART IDLE cleanly separates frames.</span>
+          </label>
+          <label class="field">
+            Override Payload Size (0 = device <code>otareq-rsp</code>, usually 128)
+            <input type="number" id="inpPayloadOverride" value="0" min="0" max="240" />
+            <span class="hint">Lower (e.g. 64 or 20) only if your Bluetooth adapter has a smaller MTU.</span>
+          </label>
+          <label class="field">
+            Override Packet Count / Group (0 = device <code>otareq-rsp</code>, usually 15)
+            <input type="number" id="inpPktCountOverride" value="0" min="0" max="16" />
+            <span class="hint">Firmware staging RAM holds 2048 bytes (max 16 × 128 B).</span>
+          </label>
+          <label class="field">
+            GATT Write Mode
+            <select id="selWriteMode">
+              <option value="auto" selected>Auto (WithoutResponse if supported, like Zendure app)</option>
+              <option value="withoutResponse">Force Write Without Response</option>
+              <option value="withResponse">Force Write With Response (slower, stricter flow control)</option>
+            </select>
+          </label>
+        </div>
+      </details>
+    </section>
+
+    <!-- 4. Local Wi-Fi & MQTT Provisioning over BLE -->
+    <section class="card">
+      <div class="card-header">
+        <h2>4. Wi-Fi &amp; MQTT Provisioning (BLE <code>token</code>)</h2>
+        <span class="hint">Saves to STM32 flash · MQTT port is fixed at <code>8883</code> by firmware</span>
+      </div>
+
+      <div class="row" style="margin-bottom:12px">
+        <span class="hint" style="margin:0">Presets:</span>
+        <button id="btnPresetLocal" class="sm">Local Broker</button>
+        <button id="btnPresetEu" class="sm">Zendure Cloud EU (App Default)</button>
+        <button id="btnPresetGlobal" class="sm">Zendure Cloud Global (App Default)</button>
+        <button id="btnPresetAccount" class="sm hidden">Use My Account Cloud Defaults</button>
+      </div>
+
+      <div class="grid-3">
+        <label class="field">
+          Wi-Fi SSID (required, max 63 B)
+          <input type="text" id="inpWifiSsid" placeholder="MyHomeWiFi" maxlength="63" />
+        </label>
+        <label class="field">
+          Wi-Fi Password (max 63 B)
+          <input type="password" id="inpWifiPass" placeholder="Wi-Fi password" maxlength="63" />
+        </label>
+        <label class="field">
+          MQTT Broker Host / IP (<code>iotUrl</code>, max 63 B)
+          <input type="text" id="inpMqttUrl" placeholder="192.168.1.100 or mqtteu.zen-iot.com" maxlength="63" />
+        </label>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label class="check">
+          <input type="checkbox" id="chkDefaultMqttCreds" checked />
+          Use firmware default MQTT credentials (<code>username = deviceId</code>, derived password — same as official app)
+        </label>
+      </div>
+
+      <div id="customMqttCredsWrap" class="grid-2 hidden" style="margin-top:10px">
+        <label class="field">
+          Custom MQTT Username (max 31 B)
+          <input type="text" id="inpMqttUser" placeholder="custom mqtt user" maxlength="31" />
+        </label>
+        <label class="field">
+          Custom MQTT Password (max 31 B)
+          <input type="password" id="inpMqttPass" placeholder="custom mqtt password" maxlength="31" />
+        </label>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button id="btnProvisionMqtt" class="blue" disabled>Save Wi-Fi &amp; MQTT to Device</button>
+        <label class="check">
+          <input type="checkbox" id="chkDisconnectAfterProv" checked />
+          Disconnect BLE after success (triggers immediate Wi-Fi/MQTT connect)
+        </label>
+        <span id="provStatus" class="hint" style="margin-left:auto"></span>
+      </div>
+    </section>
+
+    <!-- 5. Protocol Log -->
+    <section class="card">
+      <div class="card-header">
+        <h2>Protocol Log</h2>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="chkVerboseHex" /> Log every 552F data chunk</label>
+          <button id="btnCopyLog">Copy Log</button>
+          <button id="btnClearLog">Clear</button>
+        </div>
+      </div>
+      <div id="log"></div>
+    </section>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---- Zendure Hyper 2000 BLE GATT UUIDs ----
+  const UUID_SERVICE = '0000a002-0000-1000-8000-00805f9b34fb';
+  const UUID_CHAR_RX = '0000c304-0000-1000-8000-00805f9b34fb'; // Host -> Device (Write)
+  const UUID_CHAR_TX = '0000c305-0000-1000-8000-00805f9b34fb'; // Device -> Host (Notify)
+
+  const OTAREQ_REASONS = {
+    0: 'Accepted (staging flash erased, binary OTA mode active)',
+    1: 'Rejected: version too old (MASTER requires >= 8496 / 0x2130 on v2.1.47, or BMS SOC < 10%)',
+    2: 'Rejected: unknown firmware module type',
+    3: 'Rejected: invalid request or another OTA is already active',
+  };
+
+  // ---- CRC-16 (Zendure FUN_0800a308 = byte-swapped CRC-16/Modbus) & CRC-32 (IEEE) ----
+  const CRC32_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc16Zendure(bytes) {
+    let crc = 0xFFFF;
+    for (let i = 0; i < bytes.length; i++) {
+      crc ^= bytes[i];
+      for (let b = 0; b < 8; b++) {
+        crc = (crc & 1) ? ((crc >>> 1) ^ 0xA001) : (crc >>> 1);
+      }
+    }
+    return ((crc & 0xFF) << 8) | ((crc >>> 8) & 0xFF);
+  }
+
+  function crc32IEEE(bytes) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) {
+      crc = CRC32_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (~crc) >>> 0;
+  }
+
+  function formatVersion(v) {
+    const n = Number(v) & 0xFFFF;
+    return `v${(n >> 12) & 0xF}.${(n >> 8) & 0xF}.${n & 0xFF}`;
+  }
+
+  function toHex(bytes) {
+    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join(' ');
+  }
+
+  function fromHex(hex) {
+    const clean = hex.replace(/\s+/g, '');
+    const out = new Uint8Array(clean.length / 2);
+    for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+    return out;
+  }
+
+  function bytesEqual(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function checkMasterVectors(bytes) {
+    if (bytes.length < 0x100) return { ok: false, msg: 'Too small (<256 B)' };
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const sp = dv.getUint32(0, true);
+    const reset = dv.getUint32(4, true);
+    const spOk = sp >= 0x20000000 && sp <= 0x20040000 && (sp & 3) === 0;
+    const resetOk = reset >= 0x08005000 && reset < 0x08080000 && (reset & 1) === 1;
+    if (spOk && resetOk) {
+      return { ok: true, msg: `Cortex-M OK (SP=0x${sp.toString(16)}, Reset=0x${reset.toString(16)})` };
+    }
+    return { ok: false, msg: `Not a MASTER vector table (SP=0x${sp.toString(16)}, Reset=0x${reset.toString(16)})` };
+  }
+
+  // ---- Built-in MQTT Fix v2 Thumb-2 Binary Patcher (exact JS port of patch_mqtt_fix.py) ----
+  const FW_BASE = 0x08005000;
+  const STOCK_MASTER_SIZE = 166000;
+  const STOCK_MASTER_CRC16 = 0x10A2;
+  const STOCK_MASTER_CRC32 = 0xBB69502B;
+  const PATCHED_MASTER_SIZE = 166176;
+  const PATCHED_MASTER_CRC16 = 0x048C;
+  const PATCHED_MASTER_CRC32 = 0x732DB954;
+
+  function encBw(pc, target) {
+    const delta = target - (pc + 4);
+    if (delta < -16777216 || delta > 16777214 || (delta & 1) !== 0) {
+      throw new Error(`B.W out of range: ${delta}`);
+    }
+    const imm24 = (delta >> 1) & 0xFFFFFF;
+    const s = (imm24 >>> 23) & 1;
+    const i1 = (imm24 >>> 22) & 1;
+    const i2 = (imm24 >>> 21) & 1;
+    const j1 = (~i1 ^ s) & 1;
+    const j2 = (~i2 ^ s) & 1;
+    const imm10 = (imm24 >>> 11) & 0x3FF;
+    const imm11 = imm24 & 0x7FF;
+    const hw1 = 0xF000 | (s << 10) | imm10;
+    const hw2 = 0x9000 | (j1 << 13) | (j2 << 11) | imm11;
+    return new Uint8Array([hw1 & 0xFF, (hw1 >>> 8) & 0xFF, hw2 & 0xFF, (hw2 >>> 8) & 0xFF]);
+  }
+
+  function encBCond16(pc, target, cond) {
+    const delta = target - (pc + 4);
+    if (delta < -256 || delta > 254 || (delta & 1) !== 0) {
+      throw new Error(`B<cond> out of range: ${delta}`);
+    }
+    const imm8 = (delta >> 1) & 0xFF;
+    const hw = 0xD000 | (cond << 8) | imm8;
+    return new Uint8Array([hw & 0xFF, (hw >>> 8) & 0xFF]);
+  }
+
+  function encLdrLit16(pc, reg, litAddr) {
+    const aligned = (pc + 4) & ~3;
+    const delta = litAddr - aligned;
+    if (delta < 0 || delta > 1020 || (delta & 3) !== 0) {
+      throw new Error(`LDR lit out of range: ${delta}`);
+    }
+    const hw = 0x4800 | (reg << 8) | (delta >>> 2);
+    return new Uint8Array([hw & 0xFF, (hw >>> 8) & 0xFF]);
+  }
+
+  function buildTrampolines(baseAddr) {
+    const litTick = baseAddr + 0xA4;
+    const litAtTbl = baseAddr + 0xA8;
+    const code = [];
+    const push = arr => { for (let i = 0; i < arr.length; i++) code.push(arr[i]); };
+    const pushHex = h => push(fromHex(h));
+    const pushU32 = v => push(new Uint8Array([v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]));
+    const patch2 = (addr, bytes2) => {
+      const off = addr - baseAddr;
+      code[off] = bytes2[0];
+      code[off + 1] = bytes2[1];
+    };
+
+    const syms = {};
+
+    // 1. hook_publish @ baseAddr + 0x00
+    syms.hook_publish = baseAddr + code.length;
+    pushHex('95f84c0a');                               // ldrb.w r0, [r5, #0xa4c]
+    pushHex('3528');                                   // cmp    r0, #0x35
+    const pBlo = baseAddr + code.length; pushHex('0000');
+    pushHex('95f87e07');                               // ldrb.w r0, [r5, #0x77e]
+    pushHex('10f0010f');                               // tst.w  r0, #1
+    const pBeq = baseAddr + code.length; pushHex('0000');
+    pushHex('20f00100');                               // bic.w  r0, r0, #1
+    pushHex('85f87e07');                               // strb.w r0, [r5, #0x77e]
+    push(encLdrLit16(baseAddr + code.length, 1, litTick));
+    pushHex('0968');                                   // ldr    r1, [r1]
+    pushHex('c5f8541a');                               // str.w  r1, [r5, #0xa54]
+    pushHex('4021');                                   // movs   r1, #0x40
+    pushHex('681c');                                   // adds   r0, r5, #1
+    push(encBw(baseAddr + code.length, 0x0801B4A2));
+    const pubAbort = baseAddr + code.length;
+    push(encBw(baseAddr + code.length, 0x0801B4F0));
+    patch2(pBlo, encBCond16(pBlo, pubAbort, 0x3));     // BLO
+    patch2(pBeq, encBCond16(pBeq, pubAbort, 0x0));     // BEQ
+    while (code.length < 0x34) pushHex('00bf');
+
+    // 2. hook_rectask_rx @ baseAddr + 0x34
+    syms.hook_rectask_rx = baseAddr + code.length;
+    pushHex('15f0ff0f');                               // tst.w  r5, #0xff
+    const pHandled = baseAddr + code.length; pushHex('0000');
+    pushHex('b5f5806f');                               // cmp.w  r5, #0x400 (state-switch event 0x400..0x8000?)
+    const pHiEv = baseAddr + code.length; pushHex('0000');
+    pushHex('2078');                                   // ldrb   r0, [r4]
+    pushHex('411e');                                   // subs   r1, r0, #1
+    pushHex('3429');                                   // cmp    r1, #0x34
+    const pIdle = baseAddr + code.length; pushHex('0000');
+    push(encLdrLit16(baseAddr + code.length, 2, litTick));
+    pushHex('1068');                                   // ldr    r0, [r2]
+    pushHex('a168');                                   // ldr    r1, [r4, #8]
+    pushHex('421a');                                   // subs   r2, r0, r1
+    pushHex('b2f57a7f');                               // cmp.w  r2, #1000
+    const pLt1s = baseAddr + code.length; pushHex('0000');
+    pushHex('a060');                                   // str    r0, [r4, #8]
+    push(encBw(baseAddr + code.length, 0x0802AF10));
+
+    const rxHandled = baseAddr + code.length;
+    push(encLdrLit16(baseAddr + code.length, 2, litTick));
+    pushHex('1068a060');
+    push(encBw(baseAddr + code.length, 0x0802AECC));
+
+    const rxIdleRefresh = baseAddr + code.length;
+    push(encLdrLit16(baseAddr + code.length, 2, litTick));
+    pushHex('1068a060');
+    const rxExit = baseAddr + code.length;
+    push(encBw(baseAddr + code.length, 0x0802AF7C));
+
+    patch2(pHandled, encBCond16(pHandled, rxHandled, 0x1));      // BNE
+    patch2(pHiEv, encBCond16(pHiEv, rxIdleRefresh, 0x2));        // BHS
+    patch2(pIdle, encBCond16(pIdle, rxIdleRefresh, 0x2));        // BHS
+    patch2(pLt1s, encBCond16(pLt1s, rxExit, 0x3));               // BLO
+    while (code.length < 0x74) pushHex('00bf');
+
+    // 3. hook_init_at_table @ baseAddr + 0x74
+    syms.hook_init_at_table = baseAddr + code.length;
+    push(encLdrLit16(baseAddr + code.length, 0, litAtTbl));
+    pushHex('0621'); pushHex('80f8d711');              // AT_TABLE[39].fail_next = 6
+    pushHex('0a21'); pushHex('80f8d511');              // AT_TABLE[39].wait = 10
+    pushHex('80f8c911');                               // AT_TABLE[38].wait = 10
+    pushHex('0f21'); pushHex('80f8a511');              // AT_TABLE[35].wait = 15
+    pushHex('0421'); pushHex('80f8a611');              // AT_TABLE[35].retry = 4
+    push(encBw(baseAddr + code.length, 0x08012DC0));
+    while (code.length < 0xA4) pushHex('00bf');
+
+    if (baseAddr + code.length !== litTick) throw new Error('litTick alignment error');
+    pushU32(0x20000010);
+    if (baseAddr + code.length !== litAtTbl) throw new Error('litAtTbl alignment error');
+    pushU32(0x2000013C);
+    while (code.length % 16 !== 0) code.push(0xFF);
+
+    return { bytes: new Uint8Array(code), syms };
+  }
+
+  function applyMqttPatchV2(orig) {
+    if (orig.length !== STOCK_MASTER_SIZE) {
+      throw new Error(`Expected ${STOCK_MASTER_SIZE} bytes (stock MASTER_v2.1.47.bin), got ${orig.length}`);
+    }
+    const origCrc16 = crc16Zendure(orig);
+    const origCrc32 = crc32IEEE(orig);
+    if (origCrc16 !== STOCK_MASTER_CRC16 || origCrc32 !== STOCK_MASTER_CRC32) {
+      throw new Error(`Original checksum mismatch: expected CRC16=0x${STOCK_MASTER_CRC16.toString(16)}/CRC32=0x${STOCK_MASTER_CRC32.toString(16)}, got 0x${origCrc16.toString(16)}/0x${origCrc32.toString(16)}`);
+    }
+
+    const trampBase = FW_BASE + STOCK_MASTER_SIZE;
+    const { bytes: trampBytes, syms } = buildTrampolines(trampBase);
+    const out = new Uint8Array(orig.length + trampBytes.length);
+    out.set(orig, 0);
+    out.set(trampBytes, orig.length);
+
+    const checkAndWrite = (addr, expectedHex, replacement) => {
+      const off = addr - FW_BASE;
+      const exp = fromHex(expectedHex);
+      if (!bytesEqual(out.subarray(off, off + exp.length), exp)) {
+        throw new Error(`Byte verification failed at 0x${addr.toString(16)}`);
+      }
+      out.set(replacement, off);
+    };
+
+    // Patch 1: FUN_0801b484
+    checkAndWrite(0x0801B49E, '4021681c', encBw(0x0801B49E, syms.hook_publish));
+    // Patch 2: wifi_rectask
+    const p2 = new Uint8Array(6);
+    p2.set(encBw(0x0802AEC6, syms.hook_rectask_rx), 0);
+    p2.set([0x00, 0xBF], 4);
+    checkAndWrite(0x0802AEC6, '15f0ff0f57d0', p2);
+    // Patch 3: FUN_0801bb5c
+    checkAndWrite(0x0801BB70, 'f7f726b9', encBw(0x0801BB70, syms.hook_init_at_table));
+    // Patch 4: FUN_0801b500
+    checkAndWrite(
+      0x0801B572,
+      '98f80500012802d088f80a901de088f80a901ae0',
+      fromHex('88f80a9021e0242f1fdd4ff480551ce000bf00bf')
+    );
+    checkAndWrite(0x0801B5A0, '0ce0', fromHex('eae7'));
+
+    const c16 = crc16Zendure(out);
+    const c32 = crc32IEEE(out);
+    if (out.length !== PATCHED_MASTER_SIZE || c16 !== PATCHED_MASTER_CRC16 || c32 !== PATCHED_MASTER_CRC32) {
+      throw new Error(`Post-patch self-check failed: size=${out.length} crc16=0x${c16.toString(16)} crc32=0x${c32.toString(16)}`);
+    }
+    return { bytes: out, crc16: c16, crc32: c32, syms };
+  }
+
+  // ---- Application State ----
+  const state = {
+    serverOnline: false,
+    cloudSessionId: '',
+    cloudIotUrl: '',
+    cloudDevices: [],
+
+    device: null,
+    server: null,
+    rxChar: null,
+    txChar: null,
+    writeChain: Promise.resolve(),
+    connected: false,
+    sppReady: false,
+    deviceId: '',
+    deviceSn: '',
+    modules: new Map(),
+
+    stockFwBytes: null,
+    stockFwName: '',
+    fwBytes: null,
+    fwName: '',
+    fwCrc16: 0,
+    fwCrc32: 0,
+    fwIsPatched: false,
+    fwAllowed: false,
+
+    rxMode: null,
+    rxBuf: [],
+    rxJsonText: '',
+
+    otaActive: false,
+    otaAborted: false,
+    otaExpectingReboot: false,
+    pendingOtareqResolve: null,
+    pendingTokenResolve: null,
+    pendingAckWaiter: null,
+    pendingVerifyWaiter: null,
+    retries: 0,
+  };
+
+  const $ = id => document.getElementById(id);
+  const elLog = $('log');
+
+  function setStatus(text, cls = '') {
+    $('statusText').textContent = text;
+    $('statusBadge').className = 'badge' + (cls ? ' ' + cls : '');
+  }
+
+  function log(msg, cls = 'log-info') {
+    const now = new Date();
+    const ts = now.toTimeString().slice(0, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+    const div = document.createElement('div');
+    div.className = cls;
+    div.textContent = `[${ts}] ${msg}`;
+    elLog.appendChild(div);
+    if (elLog.childNodes.length > 2000) elLog.removeChild(elLog.firstChild);
+    elLog.scrollTop = elLog.scrollHeight;
+  }
+
+  function updateButtons() {
+    $('btnConnect').disabled = state.connected || state.otaActive || !navigator.bluetooth;
+    $('btnDisconnect').disabled = !state.connected;
+    $('btnQueryVer').disabled = !state.connected || state.otaActive;
+    $('btnSendSppOk').disabled = !state.connected || state.otaActive;
+    $('btnProvisionMqtt').disabled = !state.connected || state.otaActive;
+    const riskAccepted = $('chkAcceptRisk').checked;
+    const readyToOta = state.connected && !!state.fwBytes && state.fwAllowed && riskAccepted && !state.otaActive;
+    $('btnStartOta').disabled = !readyToOta;
+    $('btnTestReq').disabled = !readyToOta;
+    $('btnAbortOta').disabled = !state.otaActive;
+    $('btnCloudLogin').disabled = !state.serverOnline;
+  }
+
+  function updateVersionPreview() {
+    const v = parseInt($('inpVersion').value, 10);
+    const mod = $('selModule').value;
+    if (!Number.isFinite(v) || v < 0 || v > 65535) {
+      $('verPreview').textContent = 'Enter an integer 1..65535';
+      return;
+    }
+    const hex = '0x' + v.toString(16).toUpperCase().padStart(4, '0');
+    let extra = '';
+    if (mod === 'MASTER') {
+      extra = v < 0x2130
+        ? ' — WARNING: MASTER v2.1.47 rejects < 8496 (0x2130)!'
+        : ' — Accepted by MASTER v2.1.47 (>= 0x2130)';
+    }
+    $('verPreview').textContent = `${hex} → ${formatVersion(v)}${extra}`;
+  }
+
+  function renderModulesTable() {
+    if (state.modules.size === 0) return;
+    $('modulesTable').classList.remove('hidden');
+    const tbody = $('modulesBody');
+    tbody.innerHTML = '';
+    for (const [mod, ver] of state.modules.entries()) {
+      const tr = document.createElement('tr');
+      const hex = '0x' + (ver & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+      tr.innerHTML = `<td>${mod}</td><td>${ver}</td><td>${hex}</td><td>${formatVersion(ver)}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  // ---- Firmware State & Built-in Patcher UI ----
+  function setActiveFirmware(bytes, name, opts = {}) {
+    state.fwBytes = bytes;
+    state.fwName = name;
+    state.fwCrc16 = crc16Zendure(bytes);
+    state.fwCrc32 = crc32IEEE(bytes);
+
+    const isStock2147 = (bytes.length === STOCK_MASTER_SIZE && state.fwCrc16 === STOCK_MASTER_CRC16 && state.fwCrc32 === STOCK_MASTER_CRC32);
+    const isPatched2147 = (bytes.length === PATCHED_MASTER_SIZE && state.fwCrc16 === PATCHED_MASTER_CRC16 && state.fwCrc32 === PATCHED_MASTER_CRC32);
+    state.fwIsPatched = isPatched2147;
+    state.fwAllowed = isStock2147 || isPatched2147;
+
+    if (isStock2147 && !opts.keepStockRef) {
+      state.stockFwBytes = bytes;
+      state.stockFwName = name;
+    } else if (!isPatched2147 && !opts.keepStockRef) {
+      state.stockFwBytes = null;
+      state.stockFwName = '';
+    }
+
+    $('dropTitle').textContent = `${name} (${bytes.length.toLocaleString()} bytes)`;
+    $('dropSub').textContent = 'Drop another .bin file to replace';
+    $('fileInfo').classList.remove('hidden');
+    $('fiName').textContent = name;
+    $('fiSize').textContent = `${bytes.length} B (0x${bytes.length.toString(16)})`;
+    $('fiCrc16').textContent = `${state.fwCrc16} (0x${state.fwCrc16.toString(16).padStart(4, '0')})`;
+    $('fiCrc32').textContent = `0x${state.fwCrc32.toString(16).padStart(8, '0')}`;
+
+    const sanity = checkMasterVectors(bytes);
+    $('fiSanity').textContent = sanity.msg;
+    $('fiSanity').className = 'v ' + (sanity.ok ? 'ok' : 'bad');
+
+    const patchBox = $('patchBox');
+    patchBox.classList.remove('hidden', 'patched');
+    $('btnApplyPatch').classList.add('hidden');
+    $('btnRevertStock').classList.add('hidden');
+
+    if (isStock2147) {
+      $('fwStateBadge').className = 'badge busy';
+      $('fwStateBadge').innerHTML = '<span class="dot"></span>Stock MASTER v2.1.47 (Verified)';
+      $('patchTitle').textContent = 'Stock MASTER v2.1.47 verified (size + CRC16 + CRC32) — ready to patch!';
+      $('patchDesc').textContent = 'Click "Apply MQTT Fix v2 Patch" to patch all 4 MQTT freeze/deadlock bugs right in your browser (or flash stock as a dry-run / rollback).';
+      $('btnApplyPatch').classList.remove('hidden');
+    } else if (isPatched2147) {
+      patchBox.classList.add('patched');
+      $('fwStateBadge').className = 'badge patched';
+      $('fwStateBadge').innerHTML = '<span class="dot"></span>Patched MQTT Fix v2 (Verified)';
+      $('patchTitle').textContent = 'MQTT Fix v2 Patch Applied & Verified';
+      $('patchDesc').textContent = '166,176 B (16-byte aligned) · CRC16 0x048c · CRC32 0x732db954 — matches Cortex-M Unicorn-verified build bit-for-bit.';
+      if (state.stockFwBytes) $('btnRevertStock').classList.remove('hidden');
+    } else {
+      $('fwStateBadge').className = 'badge error';
+      $('fwStateBadge').innerHTML = '<span class="dot"></span>Unrecognized Image — Flashing Blocked';
+      $('patchTitle').textContent = 'Blocked: Unrecognized Firmware Image';
+      $('patchDesc').textContent = 'Safety lock: this tool only flashes verified Stock MASTER v2.1.47 (166,000 B · CRC16 0x10a2 · CRC32 0xbb69502b) or Patched MQTT Fix v2 (166,176 B · CRC16 0x048c · CRC32 0x732db954).';
+    }
+
+    $('selModule').value = 'MASTER';
+    updateVersionPreview();
+
+    log(`Loaded "${name}": size=${bytes.length}, CRC16=${state.fwCrc16} (0x${state.fwCrc16.toString(16).padStart(4, '0')}), CRC32=0x${state.fwCrc32.toString(16).padStart(8, '0')}, allowed=${state.fwAllowed}`,
+      state.fwAllowed ? (isPatched2147 ? 'log-rx' : 'log-info') : 'log-err');
+    updateButtons();
+  }
+
+  function applyPatchNow() {
+    if (!state.stockFwBytes) return;
+    try {
+      const res = applyMqttPatchV2(state.stockFwBytes);
+      const patchedName = state.stockFwName.replace(/\.bin$/i, '') + '_mqttfix.bin';
+      setActiveFirmware(res.bytes, patchedName, { keepStockRef: true, module: 'MASTER' });
+      log(`Applied MQTT Fix v2 in-browser! Trampolines: publish=0x${res.syms.hook_publish.toString(16)}, rectask=0x${res.syms.hook_rectask_rx.toString(16)}, init=0x${res.syms.hook_init_at_table.toString(16)}`, 'log-rx');
+    } catch (err) {
+      log(`Patch failed: ${err.message || err}`, 'log-err');
+      alert(`Patch failed: ${err.message || err}`);
+    }
+  }
+
+  function saveActiveBin() {
+    if (!state.fwBytes) return;
+    const blob = new Blob([state.fwBytes], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = state.fwName || 'firmware.bin';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // ---- Local Server Cloud Downloader ----
+  async function checkServerHealth() {
+    try {
+      const resp = await fetch('/api/health', { cache: 'no-store' });
+      if (resp.ok) {
+        const j = await resp.json();
+        if (j && j.cloudDownload) {
+          state.serverOnline = true;
+          $('serverOfflineHint').classList.add('hidden');
+          updateButtons();
+          return;
+        }
+      }
+    } catch (_) {}
+    state.serverOnline = false;
+    $('serverOfflineHint').classList.remove('hidden');
+    updateButtons();
+  }
+
+  async function cloudLogin() {
+    const account = $('inpEmail').value.trim();
+    const password = $('inpPassword').value;
+    const baseUrl = $('inpBaseUrl').value.trim();
+    if (!account || !password) {
+      $('cloudStatus').textContent = 'Enter email and password.';
+      return;
+    }
+    $('btnCloudLogin').disabled = true;
+    $('cloudStatus').textContent = 'Logging in to Zendure cloud…';
+    try {
+      const resp = await fetch('/api/zendure/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account, password, baseUrl }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+
+      state.cloudSessionId = data.sessionId;
+      state.cloudIotUrl = data.iotUrl || '';
+      state.cloudDevices = data.devices || [];
+      if (state.cloudIotUrl) {
+        const cleanHost = state.cloudIotUrl.replace(/^[a-z]+:\/\//i, '').split(':')[0];
+        state.cloudIotUrl = cleanHost;
+        $('btnPresetAccount').textContent = `Use My Account Cloud (${cleanHost})`;
+        $('btnPresetAccount').classList.remove('hidden');
+      }
+      $('cloudStatus').textContent = `Logged in (${data.serverNode || 'cloud'}) — ${state.cloudDevices.length} device(s) found.`;
+      log(`Zendure cloud login OK (${data.baseUrl}), found ${state.cloudDevices.length} device(s)`, 'log-rx');
+
+      const sel = $('selCloudDevice');
+      sel.innerHTML = '';
+      for (const d of state.cloudDevices) {
+        const opt = document.createElement('option');
+        opt.value = String(d.id);
+        opt.textContent = `${d.name || d.productName} (SN: ${d.snNumber}, type=${d.productType}, id=${d.id})`;
+        sel.appendChild(opt);
+      }
+      if (state.cloudDevices.length > 0) {
+        $('cloudDevicesWrap').classList.remove('hidden');
+        const first = state.cloudDevices[0];
+        if (first.deviceKey && !$('inpDeviceId').value) $('inpDeviceId').value = first.deviceKey;
+        await cloudFetchFirmware();
+      }
+    } catch (err) {
+      $('cloudStatus').textContent = `Login failed: ${err.message || err}`;
+      log(`Cloud login error: ${err.message || err}`, 'log-err');
+    } finally {
+      $('btnCloudLogin').disabled = !state.serverOnline;
+    }
+  }
+
+  async function cloudFetchFirmware() {
+    const devId = $('selCloudDevice').value;
+    const dev = state.cloudDevices.find(d => String(d.id) === String(devId));
+    if (!dev || !state.cloudSessionId) return;
+    if (dev.deviceKey && !$('inpDeviceId').value) $('inpDeviceId').value = dev.deviceKey;
+
+    $('btnFetchFw').disabled = true;
+    $('cloudStatus').textContent = `Querying firmware for ${dev.name || dev.snNumber}…`;
+    try {
+      const resp = await fetch('/api/zendure/firmware', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: state.cloudSessionId,
+          deviceId: dev.id,
+          productType: dev.productType || '17',
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+
+      const list = data.firmwareList || [];
+      const tbody = $('cloudFwBody');
+      tbody.innerHTML = '';
+      if (list.length === 0) {
+        $('cloudFwTable').classList.add('hidden');
+        $('cloudStatus').textContent = 'No firmware entries returned by Zendure cloud.';
+        return;
+      }
+      $('cloudFwTable').classList.remove('hidden');
+      $('cloudStatus').textContent = `Found ${list.length} firmware module(s). Click "Download & Load" on MASTER.`;
+
+      for (const item of list) {
+        const tr = document.createElement('tr');
+        const isMaster = item.module === 'MASTER';
+        const btn = document.createElement('button');
+        btn.className = isMaster ? 'primary sm' : 'sm';
+        btn.textContent = isMaster ? 'Download & Load' : 'MASTER only';
+        btn.disabled = !isMaster || !item.url;
+        if (isMaster) btn.addEventListener('click', () => cloudDownloadFirmware(item, btn));
+
+        tr.innerHTML = `<td>${item.module}</td><td>${item.version}</td><td>${item.md5 ? item.md5.slice(0, 12) + '…' : '—'}</td><td></td>`;
+        tr.lastElementChild.appendChild(btn);
+        tbody.appendChild(tr);
+      }
+    } catch (err) {
+      $('cloudStatus').textContent = `Firmware query failed: ${err.message || err}`;
+      log(`Cloud firmware query error: ${err.message || err}`, 'log-err');
+    } finally {
+      $('btnFetchFw').disabled = false;
+    }
+  }
+
+  async function cloudDownloadFirmware(item, btn) {
+    btn.disabled = true;
+    const origLabel = btn.textContent;
+    btn.textContent = 'Downloading…';
+    try {
+      log(`Downloading ${item.filename} from Zendure cloud…`, 'log-info');
+      const resp = await fetch('/api/zendure/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: state.cloudSessionId,
+          url: item.url,
+          expectedMd5: item.md5 || '',
+          filename: item.filename,
+        }),
+      });
+      if (!resp.ok) {
+        let msg = `HTTP ${resp.status}`;
+        try { const j = await resp.json(); if (j.error) msg = j.error; } catch (_) {}
+        throw new Error(msg);
+      }
+      const md5Match = resp.headers.get('X-MD5-Match');
+      const actualMd5 = resp.headers.get('X-MD5') || '';
+      const bytes = new Uint8Array(await resp.arrayBuffer());
+      if (md5Match === '0') {
+        throw new Error(`MD5 mismatch on ${item.filename}! actual=${actualMd5}, expected=${item.md5} — refusing to load corrupt download.`);
+      }
+      log(`Downloaded ${item.filename} (${bytes.length} B, MD5=${actualMd5} OK)`, 'log-rx');
+      setActiveFirmware(bytes, item.filename, { module: 'MASTER' });
+    } catch (err) {
+      log(`Download error: ${err.message || err}`, 'log-err');
+      alert(`Download failed: ${err.message || err}`);
+    } finally {
+      btn.textContent = origLabel;
+      btn.disabled = false;
+    }
+  }
+
+  // ---- BLE Write Helper (serialized queue + automatic writeWithoutResponse when writeWithResponse is unsupported) ----
+  function bleWrite(bytes, preferNoResponse = false) {
+    const run = async () => {
+      if (!state.rxChar) throw new Error('BLE RX characteristic not ready');
+      const mode = $('selWriteMode').value;
+      const props = state.rxChar.properties;
+
+      let useNoResp = false;
+      if (mode === 'withoutResponse') {
+        useNoResp = true;
+      } else if (mode === 'withResponse') {
+        useNoResp = false;
+      } else {
+        // Hyper 2000 0xC304 often advertises ONLY writeWithoutResponse (props.write === false)!
+        useNoResp = (!!props.writeWithoutResponse) && (preferNoResponse || !props.write);
+      }
+
+      if (useNoResp && typeof state.rxChar.writeValueWithoutResponse === 'function') {
+        await state.rxChar.writeValueWithoutResponse(bytes);
+      } else if (typeof state.rxChar.writeValueWithResponse === 'function') {
+        await state.rxChar.writeValueWithResponse(bytes);
+      } else {
+        await state.rxChar.writeValue(bytes);
+      }
+    };
+    const next = state.writeChain.then(run, run);
+    state.writeChain = next.catch(() => {});
+    return next;
+  }
+
+  async function sendJson(obj) {
+    const str = JSON.stringify(obj);
+    log(`TX JSON (${str.length} B): ${str}`, 'log-tx');
+    await bleWrite(new TextEncoder().encode(str), false);
+  }
+
+  // ---- BLE Notification Framing & Dispatch ----
+  function onTxNotification(event) {
+    const dv = event.target.value;
+    const chunk = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+    if (chunk.length === 0) return;
+
+    if (state.rxMode === null) {
+      if (chunk[0] === 0x55) {
+        state.rxMode = 'bin';
+        state.rxBuf = Array.from(chunk);
+      } else {
+        state.rxMode = 'json';
+        state.rxJsonText = new TextDecoder().decode(chunk);
+      }
+    } else if (state.rxMode === 'bin') {
+      for (let i = 0; i < chunk.length; i++) state.rxBuf.push(chunk[i]);
+    } else if (state.rxMode === 'json') {
+      if (chunk[0] === 0x55 && chunk.length >= 5 && (chunk[1] === 0x24 || chunk[1] === 0x25 || chunk[1] === 0x26)) {
+        log(`Discarded partial JSON before binary frame: ${state.rxJsonText}`, 'log-warn');
+        state.rxMode = 'bin';
+        state.rxBuf = Array.from(chunk);
+        state.rxJsonText = '';
+      } else {
+        state.rxJsonText += new TextDecoder().decode(chunk);
+      }
+    }
+
+    if (state.rxMode === 'bin') {
+      while (state.rxBuf.length >= 5) {
+        if (state.rxBuf[0] !== 0x55) { state.rxBuf.shift(); continue; }
+        const totalLen = 5 + state.rxBuf[4];
+        if (state.rxBuf.length < totalLen) break;
+        const frame = new Uint8Array(state.rxBuf.splice(0, totalLen));
+        handleBinaryFrame(frame);
+      }
+      if (state.rxBuf.length === 0) state.rxMode = null;
+      return;
+    }
+
+    if (state.rxMode === 'json') {
+      const trimmed = state.rxJsonText.trim();
+      try {
+        const parsed = JSON.parse(trimmed);
+        state.rxJsonText = '';
+        state.rxMode = null;
+        handleJsonMessage(parsed, trimmed);
+      } catch (_) {
+        if (state.rxJsonText.length > 4096) {
+          log(`RX non-JSON/overflow (${state.rxJsonText.length} B): ${state.rxJsonText.slice(0, 120)}`, 'log-warn');
+          state.rxJsonText = '';
+          state.rxMode = null;
+        }
+      }
+    }
+  }
+
+  function handleJsonMessage(msg, rawStr) {
+    log(`RX JSON: ${rawStr}`, 'log-rx');
+
+    if (msg.deviceId && state.deviceId !== String(msg.deviceId)) {
+      state.deviceId = String(msg.deviceId);
+      $('devId').textContent = state.deviceId;
+      $('inpDeviceId').value = state.deviceId;
+    }
+    if (msg.deviceSn) {
+      state.deviceSn = String(msg.deviceSn);
+      $('devSn').textContent = state.deviceSn;
+    }
+
+    const method = msg.method || '';
+    if (method === 'BLESPP') {
+      const firstSpp = !state.sppReady;
+      state.sppReady = true;
+      $('devSpp').textContent = 'BLESPP received → replying BLESPP_OK';
+      $('devSpp').className = 'v ok';
+      sendJson({ messageId: 1009, method: 'BLESPP_OK' })
+        .then(() => {
+          $('devSpp').textContent = 'BLESPP_OK sent';
+          if (firstSpp) {
+            setTimeout(() => {
+              if (state.connected && !state.otaActive) {
+                sendJson({ method: 'BLEGetVersion' }).catch(e => log(`BLEGetVersion err: ${e}`, 'log-warn'));
+              }
+            }, 300);
+          }
+        })
+        .catch(e => log(`Failed to send BLESPP_OK: ${e}`, 'log-err'));
+    } else if (method === 'firmware' && Array.isArray(msg.modules)) {
+      for (const m of msg.modules) {
+        if (m && m.module !== undefined && m.version !== undefined) {
+          state.modules.set(String(m.module), Number(m.version));
+        }
+      }
+      renderModulesTable();
+    } else if (method === 'getInfo-rsp' && Array.isArray(msg.firmwares)) {
+      for (const f of msg.firmwares) {
+        if (f && f.type !== undefined && f.version !== undefined) {
+          state.modules.set(String(f.type), Number(f.version));
+        }
+      }
+      renderModulesTable();
+    } else if (method === 'report' && msg.properties) {
+      let updated = false;
+      if (msg.properties.masterSoftVersion !== undefined) {
+        state.modules.set('MASTER', Number(msg.properties.masterSoftVersion));
+        updated = true;
+      }
+      if (msg.properties.dspversion !== undefined) {
+        state.modules.set('AC/DSP', Number(msg.properties.dspversion));
+        updated = true;
+      }
+      if (updated) {
+        renderModulesTable();
+        const mVer = state.modules.has('MASTER') ? formatVersion(state.modules.get('MASTER')) : '?';
+        const dVer = state.modules.has('AC/DSP') ? formatVersion(state.modules.get('AC/DSP')) : '?';
+        $('devFwBrief').textContent = `${mVer} / ${dVer}`;
+      }
+    } else if (method === 'otareq-rsp') {
+      if (state.pendingOtareqResolve) {
+        const res = state.pendingOtareqResolve;
+        state.pendingOtareqResolve = null;
+        res(msg);
+      }
+    } else if (method === 'Token') {
+      if (state.pendingTokenResolve) {
+        const res = state.pendingTokenResolve;
+        state.pendingTokenResolve = null;
+        res(msg);
+      }
+    }
+  }
+
+  function handleBinaryFrame(frame) {
+    const cmd = frame[1];
+    const seq = frame[2];
+    const payloadLen = frame[4];
+
+    if (cmd === 0x24 && payloadLen === 5) {
+      const dv = new DataView(frame.buffer, frame.byteOffset, frame.byteLength);
+      const offset = dv.getUint32(6, false);
+      const nextSeq = (seq + 1) & 0xFF;
+      log(`RX BIN 0x24 ACK: lastSeq=${seq} (nextSeq=${nextSeq}), committedOffset=${offset} [${toHex(frame)}]`, 'log-rx');
+      if (state.pendingAckWaiter) {
+        const w = state.pendingAckWaiter;
+        state.pendingAckWaiter = null;
+        w({ seq, nextSeq, offset });
+      }
+    } else if (cmd === 0x25 && payloadLen === 1) {
+      const status = frame[5];
+      const labels = {
+        0: 'CRC-16 VERIFICATION FAILED',
+        1: 'CRC-16 VERIFIED & HEADER WRITTEN (preparing reboot/apply)',
+        2: 'UPGRADE FAILED',
+        3: 'UPGRADE COMPLETE (device rebooting to bootloader!)',
+      };
+      log(`RX BIN 0x25 STATUS: seq=${seq}, status=${status} (${labels[status] || 'unknown'}) [${toHex(frame)}]`,
+        (status === 1 || status === 3) ? 'log-rx' : 'log-err');
+      if (state.pendingVerifyWaiter && (status === 0 || status === 1)) {
+        const w = state.pendingVerifyWaiter;
+        state.pendingVerifyWaiter = null;
+        w(status);
+      }
+      if (status === 3) {
+        $('otaPhase').textContent = 'Upgrade complete — device rebooting!';
+        setStatus('Rebooting to flash…', 'connected');
+        state.otaExpectingReboot = true;
+      } else if (status === 2) {
+        $('otaPhase').textContent = 'Device reported upgrade failure!';
+        $('progressBar').classList.add('error');
+        setStatus('Upgrade Failed', 'error');
+      }
+    } else if (cmd === 0x26 && payloadLen === 2) {
+      const st = frame[5];
+      const pct = frame[6];
+      const stName = { 1: 'Success', 2: 'Failed', 3: 'Applying' }[st] || `State(${st})`;
+      log(`RX BIN 0x26 PROGRESS: ${stName} ${pct}% [${toHex(frame)}]`, 'log-rx');
+      $('otaPhase').textContent = `Device applying: ${stName} (${pct}%)`;
+    } else {
+      log(`RX BIN UNKNOWN (${frame.length} B): ${toHex(frame)}`, 'log-warn');
+    }
+  }
+
+  // ---- Connect / Disconnect ----
+  async function connectBle() {
+    try {
+      setStatus('Scanning…', 'busy');
+      const showAll = $('chkAllDevices').checked;
+      const reqOpts = showAll
+        ? { acceptAllDevices: true, optionalServices: [UUID_SERVICE] }
+        : { filters: [{ namePrefix: 'Zen' }], optionalServices: [UUID_SERVICE] };
+
+      log(`Requesting BLE device (${showAll ? 'all devices' : 'namePrefix="Zen"'})…`);
+      const device = await navigator.bluetooth.requestDevice(reqOpts);
+      state.device = device;
+      device.addEventListener('gattserverdisconnected', onDisconnected);
+
+      setStatus('Connecting…', 'busy');
+      log(`Connecting GATT to "${device.name || device.id}"…`);
+      const server = await device.gatt.connect();
+      state.server = server;
+
+      const service = await server.getPrimaryService(UUID_SERVICE);
+      state.rxChar = await service.getCharacteristic(UUID_CHAR_RX);
+      state.txChar = await service.getCharacteristic(UUID_CHAR_TX);
+
+      await state.txChar.startNotifications();
+      state.txChar.addEventListener('characteristicvaluechanged', onTxNotification);
+
+      state.connected = true;
+      state.sppReady = false;
+      state.otaExpectingReboot = false;
+      state.deviceId = '';
+      state.deviceSn = '';
+      state.modules.clear();
+      state.rxMode = null;
+      state.rxBuf = [];
+      state.rxJsonText = '';
+
+      $('deviceInfo').classList.remove('hidden');
+      $('modulesTable').classList.add('hidden');
+      $('devBleName').textContent = device.name || device.id;
+      $('devId').textContent = '—';
+      $('devSn').textContent = '—';
+      $('devFwBrief').textContent = '—';
+      $('devSpp').textContent = 'Waiting for BLESPP…';
+      $('devSpp').className = 'v';
+
+      const wProps = [
+        state.rxChar.properties.write ? 'write' : null,
+        state.rxChar.properties.writeWithoutResponse ? 'writeWithoutResponse' : null,
+      ].filter(Boolean).join(', ');
+      log(`Connected! RX props=[${wProps}]. Listening on 0xC305…`, 'log-rx');
+      setStatus(`Connected (${device.name || 'Hyper 2000'})`, 'connected');
+      updateButtons();
+
+      setTimeout(async () => {
+        if (state.connected && !state.sppReady && !state.otaActive) {
+          log('No BLESPP banner yet — sending proactive BLESPP_OK & BLEGetVersion…', 'log-info');
+          try {
+            await sendJson({ messageId: 1009, method: 'BLESPP_OK' });
+            await sleep(250);
+            await sendJson({ method: 'BLEGetVersion' });
+          } catch (e) {
+            log(`Proactive handshake error: ${e}`, 'log-warn');
+          }
+        }
+      }, 1500);
+    } catch (err) {
+      log(`Connect error: ${err.message || err}`, 'log-err');
+      setStatus('Disconnected');
+      updateButtons();
+    }
+  }
+
+  function onDisconnected() {
+    const expected = state.otaExpectingReboot;
+    log(expected
+      ? 'BLE disconnected — expected while Hyper 2000 reboots into bootloader to flash MASTER! Wait ~30s and reconnect to verify.'
+      : 'BLE GATT disconnected.',
+      expected ? 'log-rx' : 'log-warn');
+
+    state.connected = false;
+    state.rxChar = null;
+    state.txChar = null;
+    state.server = null;
+
+    if (state.otaActive && !expected) {
+      state.otaAborted = true;
+      if (state.pendingAckWaiter) { const w = state.pendingAckWaiter; state.pendingAckWaiter = null; w(null); }
+      if (state.pendingVerifyWaiter) { const w = state.pendingVerifyWaiter; state.pendingVerifyWaiter = null; w(null); }
+      if (state.pendingOtareqResolve) { const w = state.pendingOtareqResolve; state.pendingOtareqResolve = null; w(null); }
+    }
+    if (state.pendingTokenResolve) { const w = state.pendingTokenResolve; state.pendingTokenResolve = null; w(null); }
+    setStatus(expected ? 'Device Rebooting' : 'Disconnected', expected ? 'connected' : '');
+    updateButtons();
+  }
+
+  function disconnectBle() {
+    if (state.device && state.device.gatt && state.device.gatt.connected) {
+      state.device.gatt.disconnect();
+    }
+  }
+
+  // ---- Wi-Fi & Local MQTT Provisioning (FUN_08016048 method="token") ----
+  function waitForTokenRsp(timeoutMs = 10000) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (state.pendingTokenResolve) {
+          state.pendingTokenResolve = null;
+          reject(new Error('Timed out waiting for Token reply from device'));
+        }
+      }, timeoutMs);
+      state.pendingTokenResolve = msg => {
+        clearTimeout(timer);
+        if (!msg) reject(new Error('Disconnected while waiting for Token reply'));
+        else resolve(msg);
+      };
+    });
+  }
+
+  async function provisionMqtt() {
+    if (!state.connected || state.otaActive) return;
+    const ssid = $('inpWifiSsid').value;
+    const password = $('inpWifiPass').value;
+    const iotUrl = $('inpMqttUrl').value.trim();
+    const useDefaults = $('chkDefaultMqttCreds').checked;
+    const iotUserName = useDefaults ? '' : $('inpMqttUser').value.trim();
+    const iotPassword = useDefaults ? '' : $('inpMqttPass').value;
+
+    if (!ssid || !iotUrl) {
+      $('provStatus').textContent = 'Wi-Fi SSID and MQTT Broker Host/IP are required.';
+      return;
+    }
+
+    const encLen = s => new TextEncoder().encode(s).length;
+    if (encLen(ssid) > 63 || encLen(password) > 63 || encLen(iotUrl) > 63) {
+      alert('SSID, Wi-Fi password, and MQTT host must each be <= 63 UTF-8 bytes (STM32 buffer limit).');
+      return;
+    }
+    if (encLen(iotUserName) > 31 || encLen(iotPassword) > 31) {
+      alert('MQTT username and MQTT password must each be <= 31 UTF-8 bytes (STM32 buffer limit).');
+      return;
+    }
+
+    // Note: FUN_08016048 unconditionally dereferences ssid, password, iotUrl, and token ("" is safe).
+    // When iotUserName/iotPassword are omitted, firmware sets deviceId + derived password (same as official app).
+    const payload = {
+      method: 'token',
+      ssid,
+      password,
+      iotUrl,
+      token: '',
+    };
+    if (iotUserName) payload.iotUserName = iotUserName;
+    if (iotPassword) payload.iotPassword = iotPassword;
+
+    const ok = confirm(
+      `Write Wi-Fi & MQTT settings to Hyper 2000 flash?\n\n` +
+      `Wi-Fi SSID: ${ssid}\n` +
+      `MQTT Host: ${iotUrl}:8883\n` +
+      `MQTT Creds: ${useDefaults ? 'Firmware defaults (deviceId / Zendure derived)' : `${iotUserName || '(deviceId)'} / ${iotPassword ? '(custom password)' : '(derived)'}`}`
+    );
+    if (!ok) return;
+
+    $('btnProvisionMqtt').disabled = true;
+    $('provStatus').textContent = 'Sending provisioning config…';
+    try {
+      const rspPromise = waitForTokenRsp(10000);
+      // Redact passwords in protocol log
+      const redacted = { ...payload, password: '***', ...(payload.iotPassword ? { iotPassword: '***' } : {}) };
+      log(`TX JSON (token provisioning, ${new TextEncoder().encode(JSON.stringify(payload)).length} B): ${JSON.stringify(redacted)}`, 'log-tx');
+      await bleWrite(new TextEncoder().encode(JSON.stringify(payload)), false);
+
+      const rsp = await rspPromise;
+      if (Number(rsp.result) === 0) {
+        $('provStatus').textContent = `Saved! (deviceId=${rsp.deviceId || state.deviceId}, productModel=${rsp.productModel || ''})`;
+        log(`Wi-Fi & MQTT provisioned successfully! Device saved config to flash (result=0).`, 'log-rx');
+        if ($('chkDisconnectAfterProv').checked) {
+          log('Disconnecting BLE so Hyper 2000 exits BLE SPP and connects to the new Wi-Fi & MQTT broker…', 'log-info');
+          await sleep(400);
+          disconnectBle();
+        }
+      } else {
+        $('provStatus').textContent = `Device returned result=${rsp.result}`;
+        log(`Unexpected Token reply result=${rsp.result}`, 'log-warn');
+      }
+    } catch (err) {
+      $('provStatus').textContent = `Failed: ${err.message || err}`;
+      log(`MQTT provisioning error: ${err.message || err}`, 'log-err');
+    } finally {
+      updateButtons();
+    }
+  }
+
+  // ---- OTA Transfer Engine ----
+  function waitForOtareqRsp(timeoutMs = 12000) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (state.pendingOtareqResolve) {
+          state.pendingOtareqResolve = null;
+          reject(new Error('Timed out waiting for otareq-rsp'));
+        }
+      }, timeoutMs);
+      state.pendingOtareqResolve = msg => {
+        clearTimeout(timer);
+        if (!msg) reject(new Error('Disconnected while waiting for otareq-rsp'));
+        else resolve(msg);
+      };
+    });
+  }
+
+  function waitForAck(timeoutMs = 10000) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (state.pendingAckWaiter) {
+          state.pendingAckWaiter = null;
+          reject(new Error('Timed out waiting for 55 24 group ACK from device'));
+        }
+      }, timeoutMs);
+      state.pendingAckWaiter = ack => {
+        clearTimeout(timer);
+        if (!ack) reject(new Error('Transfer aborted/disconnected while waiting for ACK'));
+        else resolve(ack);
+      };
+    });
+  }
+
+  function waitForVerify(timeoutMs = 15000) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (state.pendingVerifyWaiter) {
+          state.pendingVerifyWaiter = null;
+          reject(new Error('Timed out waiting for 55 25 CRC verification status'));
+        }
+      }, timeoutMs);
+      state.pendingVerifyWaiter = status => {
+        clearTimeout(timer);
+        if (status === null) reject(new Error('Disconnected before CRC verification completed'));
+        else resolve(status);
+      };
+    });
+  }
+
+  async function sendOtaReq() {
+    if (!state.fwBytes || !state.fwAllowed) {
+      throw new Error('Refusing to send otareq: only verified Stock or Patched MASTER v2.1.47 images are allowed');
+    }
+    const mod = 'MASTER';
+    const version = parseInt($('inpVersion').value, 10);
+    const devId = ($('inpDeviceId').value || state.deviceId || '').trim();
+    if (!Number.isFinite(version) || version < 1 || version > 65535) {
+      throw new Error('Invalid target version number');
+    }
+    const req = {
+      method: 'otareq',
+      deviceId: devId,
+      firmware: {
+        type: mod,
+        version,
+        size: state.fwBytes.length,
+        CRC16: state.fwCrc16,
+      },
+    };
+    const rspPromise = waitForOtareqRsp(12000);
+    await sendJson(req);
+    const rsp = await rspPromise;
+    const reasonText = OTAREQ_REASONS[rsp.reason] || `Unknown reason ${rsp.reason}`;
+    log(`otareq-rsp: result=${rsp.result}, reason=${rsp.reason} (${reasonText}), packetCount=${rsp.packetCount}, payloadSize=${rsp.payloadSize}, fileRange=${rsp.fileRange}`,
+      rsp.result === 1 ? 'log-rx' : 'log-err');
+    return rsp;
+  }
+
+  async function sendGroup(offset, groupSeq, packetCount, payloadSize, delayMs) {
+    const total = state.fwBytes.length;
+    const remaining = total - offset;
+    const numSubpackets = Math.min(packetCount, Math.ceil(remaining / payloadSize));
+    const lastIdx = numSubpackets - 1;
+    const verbose = $('chkVerboseHex').checked;
+
+    let cursor = offset;
+    for (let i = 0; i < numSubpackets; i++) {
+      if (state.otaAborted) throw new Error('Aborted by user');
+      const end = Math.min(cursor + payloadSize, total);
+      const chunkLen = end - cursor;
+      const pkt = new Uint8Array(5 + chunkLen);
+      pkt[0] = 0x55;
+      pkt[1] = 0x2F;
+      pkt[2] = groupSeq & 0xFF;
+      pkt[3] = ((lastIdx & 0x0F) << 4) | (i & 0x0F);
+      pkt[4] = chunkLen & 0xFF;
+      pkt.set(state.fwBytes.subarray(cursor, end), 5);
+
+      if (verbose) log(`TX 552F grp=${groupSeq} sub=${i}/${lastIdx} off=${cursor} len=${chunkLen}`, 'log-tx');
+      await bleWrite(pkt, true);
+      cursor = end;
+      if (delayMs > 0) await sleep(delayMs);
+    }
+    return cursor;
+  }
+
+  function updateProgress(doneBytes, totalBytes, startTime, groupSeq, retries) {
+    const pct = totalBytes > 0 ? Math.min(100, (doneBytes / totalBytes) * 100) : 0;
+    $('progressBar').style.width = pct.toFixed(2) + '%';
+    $('statBytes').textContent = `${doneBytes.toLocaleString()} / ${totalBytes.toLocaleString()} B (${pct.toFixed(1)}%)`;
+    const elapsedSec = Math.max(0.1, (Date.now() - startTime) / 1000);
+    const bps = doneBytes / elapsedSec;
+    $('statSpeed').textContent = `Speed: ${(bps / 1024).toFixed(2)} KB/s`;
+    const remSec = bps > 0 ? Math.max(0, Math.round((totalBytes - doneBytes) / bps)) : 0;
+    $('statEta').textContent = `ETA: ${Math.floor(remSec / 60)}m ${String(remSec % 60).padStart(2, '0')}s`;
+    $('statSeq').textContent = `Group: ${groupSeq} · Retries: ${retries}`;
+  }
+
+  async function runOta() {
+    if (!state.connected || !state.fwBytes || !state.fwAllowed) return;
+    const mod = 'MASTER';
+    const ver = parseInt($('inpVersion').value, 10);
+
+    const sanity = checkMasterVectors(state.fwBytes);
+    if (!sanity.ok) {
+      alert(`Blocked: "${state.fwName}" failed Cortex-M MASTER vector check:\n${sanity.msg}`);
+      return;
+    }
+
+    const ok = confirm(
+      `Start BLE OTA upload?\n\n` +
+      `Module: ${mod}\n` +
+      `Image: ${state.fwName} (${state.fwBytes.length} bytes)\n` +
+      `Status: ${state.fwIsPatched ? 'Patched (MQTT Fix v2)' : 'Stock MASTER v2.1.47'}\n` +
+      `Target Version: ${ver} (${formatVersion(ver)})\n` +
+      `Zendure CRC-16: ${state.fwCrc16} (0x${state.fwCrc16.toString(16).padStart(4, '0')})\n` +
+      `CRC-32: 0x${state.fwCrc32.toString(16).padStart(8, '0')}\n\n` +
+      `Do not power off the Hyper 2000 during flashing.`
+    );
+    if (!ok) return;
+
+    state.otaActive = true;
+    state.otaAborted = false;
+    state.otaExpectingReboot = false;
+    state.retries = 0;
+    $('progressBar').classList.remove('error');
+    $('progressBar').style.width = '0%';
+    setStatus('Flashing OTA…', 'busy');
+    $('otaPhase').textContent = 'Sending otareq (erasing SPI staging flash)…';
+    updateButtons();
+
+    const startTime = Date.now();
+    try {
+      const rsp = await sendOtaReq();
+      if (rsp.result !== 1) {
+        throw new Error(`Device rejected otareq (reason=${rsp.reason}: ${OTAREQ_REASONS[rsp.reason] || 'unknown'})`);
+      }
+
+      const devPktCount = Math.min(16, Math.max(1, Number(rsp.packetCount) || 15));
+      const devPayload = Math.min(240, Math.max(16, Number(rsp.payloadSize) || 128));
+      const ovPkt = parseInt($('inpPktCountOverride').value, 10) || 0;
+      const ovPay = parseInt($('inpPayloadOverride').value, 10) || 0;
+      const delayMs = Math.max(5, parseInt($('inpDelayMs').value, 10) || 70);
+
+      let packetCount = ovPkt > 0 ? Math.min(16, ovPkt) : devPktCount;
+      let payloadSize = ovPay > 0 ? Math.min(240, ovPay) : devPayload;
+      if (packetCount * payloadSize > 2048) {
+        packetCount = Math.max(1, Math.floor(2048 / payloadSize));
+        log(`Clamped packetCount to ${packetCount} so group <= 2048 B`, 'log-warn');
+      }
+
+      let offset = Number(rsp.fileRange) || 0;
+      let groupSeq = 0;
+      const total = state.fwBytes.length;
+
+      log(`Starting binary transfer: ${total} B, group=${packetCount}×${payloadSize} B, delay=${delayMs} ms`, 'log-info');
+      $('otaPhase').textContent = 'Transferring firmware chunks…';
+      updateProgress(offset, total, startTime, groupSeq, state.retries);
+      await sleep(150);
+
+      let consecutiveTimeouts = 0;
+      while (offset < total) {
+        if (state.otaAborted) throw new Error('Aborted by user');
+        const ackPromise = waitForAck(12000);
+        let expectedEnd;
+        try {
+          expectedEnd = await sendGroup(offset, groupSeq, packetCount, payloadSize, delayMs);
+        } catch (writeErr) {
+          if (state.pendingAckWaiter) { const w = state.pendingAckWaiter; state.pendingAckWaiter = null; w(null); }
+          ackPromise.catch(() => {});
+          throw new Error(`BLE write failed (${writeErr.message}). If your adapter has a smaller MTU, try setting Payload Size Override to 64 or 20 in Advanced Settings.`);
+        }
+
+        let ack;
+        try {
+          ack = await ackPromise;
+          consecutiveTimeouts = 0;
+        } catch (ackErr) {
+          consecutiveTimeouts++;
+          state.retries++;
+          log(`No ACK for group ${groupSeq} (attempt ${consecutiveTimeouts}): ${ackErr.message}`, 'log-warn');
+          if (consecutiveTimeouts >= 6) throw new Error('Too many consecutive ACK timeouts');
+          continue;
+        }
+
+        if (ack.offset === expectedEnd && ack.seq === (groupSeq & 0xFF)) {
+          offset = ack.offset;
+          groupSeq = ack.nextSeq;
+        } else {
+          state.retries++;
+          log(`Resync requested by device: moving offset ${offset} -> ${ack.offset}, groupSeq -> ${ack.nextSeq}`, 'log-warn');
+          offset = ack.offset;
+          groupSeq = ack.nextSeq;
+          if (state.retries > 30) throw new Error('Exceeded 30 group retries — check BLE signal or increase inter-packet delay');
+        }
+        updateProgress(offset, total, startTime, groupSeq, state.retries);
+      }
+
+      $('otaPhase').textContent = 'All bytes uploaded — waiting for device CRC-16 verification…';
+      log('Upload 100% ACKed. Waiting for device SPI-flash CRC-16 verification (55 25)…', 'log-info');
+      const verifyStatus = await waitForVerify(20000);
+
+      if (verifyStatus === 1) {
+        state.otaExpectingReboot = true;
+        $('otaPhase').textContent = 'CRC-16 verified! Device is applying update & will reboot in ~6 seconds…';
+        setStatus('Verified — Rebooting…', 'connected');
+        log('SUCCESS! Device verified CRC-16 and wrote OTA flash header (0xA580). MASTER will reboot automatically in ~6 s.', 'log-rx');
+      } else {
+        throw new Error(`Device reported CRC-16 verification failure (55 25 status=${verifyStatus}). Flash header cleared; existing firmware untouched.`);
+      }
+    } catch (err) {
+      log(`OTA failed: ${err.message || err}`, 'log-err');
+      $('otaPhase').textContent = `Error: ${err.message || err}`;
+      $('progressBar').classList.add('error');
+      setStatus('OTA Error', 'error');
+    } finally {
+      state.otaActive = false;
+      updateButtons();
+    }
+  }
+
+  // ---- UI Wiring ----
+  if (!navigator.bluetooth) $('btUnsupported').classList.remove('hidden');
+
+  function setTab(which) {
+    $('tabCloud').classList.toggle('active', which === 'cloud');
+    $('tabLocal').classList.toggle('active', which === 'local');
+    $('panelCloud').classList.toggle('hidden', which !== 'cloud');
+    $('panelLocal').classList.toggle('hidden', which !== 'local');
+  }
+  $('tabCloud').addEventListener('click', () => setTab('cloud'));
+  $('tabLocal').addEventListener('click', () => setTab('local'));
+
+  $('btnCloudLogin').addEventListener('click', cloudLogin);
+  $('inpPassword').addEventListener('keydown', e => { if (e.key === 'Enter' && state.serverOnline) cloudLogin(); });
+  $('btnFetchFw').addEventListener('click', cloudFetchFirmware);
+  $('selCloudDevice').addEventListener('change', cloudFetchFirmware);
+
+  $('btnApplyPatch').addEventListener('click', applyPatchNow);
+  $('btnRevertStock').addEventListener('click', () => {
+    if (state.stockFwBytes) setActiveFirmware(state.stockFwBytes, state.stockFwName, { keepStockRef: true, module: 'MASTER' });
+  });
+  $('btnSaveBin').addEventListener('click', saveActiveBin);
+
+  $('btnConnect').addEventListener('click', connectBle);
+  $('btnDisconnect').addEventListener('click', disconnectBle);
+  $('btnProvisionMqtt').addEventListener('click', provisionMqtt);
+
+  const syncMqttCredsUi = () => {
+    $('customMqttCredsWrap').classList.toggle('hidden', $('chkDefaultMqttCreds').checked);
+  };
+  $('chkAcceptRisk').addEventListener('change', updateButtons);
+  $('chkDefaultMqttCreds').addEventListener('change', syncMqttCredsUi);
+  $('btnPresetLocal').addEventListener('click', () => {
+    $('inpMqttUrl').value = location.hostname && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'
+      ? location.hostname
+      : '192.168.1.100';
+    $('chkDefaultMqttCreds').checked = false;
+    syncMqttCredsUi();
+  });
+  $('btnPresetEu').addEventListener('click', () => {
+    $('inpMqttUrl').value = 'mqtteu.zen-iot.com';
+    $('chkDefaultMqttCreds').checked = true;
+    syncMqttCredsUi();
+  });
+  $('btnPresetGlobal').addEventListener('click', () => {
+    $('inpMqttUrl').value = 'mqtt.zen-iot.com';
+    $('chkDefaultMqttCreds').checked = true;
+    syncMqttCredsUi();
+  });
+  $('btnPresetAccount').addEventListener('click', () => {
+    if (state.cloudIotUrl) $('inpMqttUrl').value = state.cloudIotUrl;
+    $('chkDefaultMqttCreds').checked = true;
+    syncMqttCredsUi();
+  });
+  syncMqttCredsUi();
+  $('btnQueryVer').addEventListener('click', () => {
+    sendJson({ method: 'BLEGetVersion' }).catch(e => log(`BLEGetVersion failed: ${e}`, 'log-err'));
+  });
+  $('btnSendSppOk').addEventListener('click', () => {
+    sendJson({ messageId: 1009, method: 'BLESPP_OK' }).catch(e => log(`BLESPP_OK failed: ${e}`, 'log-err'));
+  });
+
+  $('inpVersion').addEventListener('input', updateVersionPreview);
+
+  const dz = $('dropzone');
+  const handleFile = async f => {
+    if (!f) return;
+    setActiveFirmware(new Uint8Array(await f.arrayBuffer()), f.name);
+  };
+  $('fileInput').addEventListener('change', e => handleFile(e.target.files[0]));
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('dragover');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  $('btnStartOta').addEventListener('click', runOta);
+  $('btnAbortOta').addEventListener('click', () => {
+    if (!state.otaActive) return;
+    state.otaAborted = true;
+    log('Abort requested — stopping transfer…', 'log-warn');
+    if (state.pendingAckWaiter) { const w = state.pendingAckWaiter; state.pendingAckWaiter = null; w(null); }
+    if (state.pendingVerifyWaiter) { const w = state.pendingVerifyWaiter; state.pendingVerifyWaiter = null; w(null); }
+  });
+  $('btnTestReq').addEventListener('click', async () => {
+    if (!confirm('Send standalone otareq? If accepted, the device erases its SPI OTA staging sector and waits ~24s before timing out harmlessly.')) return;
+    try { await sendOtaReq(); } catch (e) { log(`otareq failed: ${e.message || e}`, 'log-err'); }
+  });
+
+  $('btnCopyLog').addEventListener('click', () => {
+    navigator.clipboard.writeText(elLog.innerText)
+      .then(() => log('Log copied to clipboard.', 'log-info'))
+      .catch(() => {});
+  });
+  $('btnClearLog').addEventListener('click', () => { elLog.innerHTML = ''; });
+
+  updateVersionPreview();
+  updateButtons();
+  checkServerHealth();
+  log('Ready. Run `python3 ble_ota_webapp/server.py` for one-click cloud download + in-browser patch + BLE flash.');
+})();
+</script>
+</body>
+</html>

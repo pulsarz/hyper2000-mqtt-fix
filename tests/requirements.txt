@@ -1,0 +1,5 @@
+# Optional dependencies — ONLY needed to run tests/emulate_patch.py.
+# patch_mqtt_fix.py and ble_ota_webapp/server.py use the Python standard library only
+# (cloud download uses requests + cryptography via download_hyper2000_fw.py).
+unicorn>=2.1.0
+capstone>=5.0.0

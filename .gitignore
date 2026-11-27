@@ -1,0 +1,14 @@
+# Ignore proprietary binaries, APKs, downloaded firmware, and Ghidra project DBs
+*.xapk
+*.apk
+*.bin
+*.lzma
+*.zip
+*.tar.gz
+__pycache__/
+*.pyc
+.venv/
+venv/
+extracted/
+ghidra_proj/
+hyper2000_fw/
